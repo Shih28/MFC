@@ -1010,11 +1010,13 @@ contains
                 #:set SV = STENCIL_VAR
                 #:set SF = lambda offs: COORDS.format(STENCIL_IDX = SV + offs)
                 if (weno_dir == ${WENO_DIR}$) then
-                    $:GPU_PARALLEL_LOOP(collapse=4, privateArrays='[beta, dvd, poly, omega, alpha]', &
+                    ! One thread per cell, variables in sequence (as WENO5): neighbouring threads touch neighbouring cells
+                    $:GPU_PARALLEL_LOOP(collapse=3, privateArrays='[beta, dvd, poly, omega, alpha]', &
                                         & private='[tau, q, vp0, vp1, vm1]')
                     do l = ${Z_BND}$%beg, ${Z_BND}$%end
                         do k = ${Y_BND}$%beg, ${Y_BND}$%end
                             do j = ${X_BND}$%beg, ${X_BND}$%end
+                                $:GPU_LOOP(parallelism='[seq]')
                                 do i = 1, v_size
                                     ! reconstruct from left side
 
