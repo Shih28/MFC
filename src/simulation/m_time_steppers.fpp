@@ -537,11 +537,14 @@ contains
                 if (s == time_stepper) call s_write_lag_step_output()
             end if
             ! TWIN of s_amr_fine_rk_update_batch (m_amr_advance): change the stage algebra here and it must follow
-            $:GPU_PARALLEL_LOOP(collapse=4)
-            do i = 1, sys_size
-                do l = 0, p
-                    do k = 0, n
-                        do j = 0, m
+            ! One thread per cell, variables in sequence: collapsing the variable loop too made every thread split a 4-D
+            ! index with 64-bit integer divisions, which cost more than the update itself
+            $:GPU_PARALLEL_LOOP(collapse=3)
+            do l = 0, p
+                do k = 0, n
+                    do j = 0, m
+                        $:GPU_LOOP(parallelism='[seq]')
+                        do i = 1, sys_size
                             if (s == 1 .and. nstage > 1) then
                                 q_cons_ts(stor)%vf(i)%sf(j, k, l) = q_cons_ts(1)%vf(i)%sf(j, k, l)
                             end if
