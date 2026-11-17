@@ -270,12 +270,14 @@ exit 0
                 # Uncapped, the WENO, HLL/LF Riemann, viscous-flux and IGR kernels take 140-250 registers: two or three
                 # 128-thread blocks per SM, latency-bound. At 128 registers four blocks fit for a few bytes of spill (H200,
                 # case-optimized: WENO5 -32 % and HLL -24 % kernel time; IGR case +19 %, IBM and viscous cases +4.7 %).
-                # Per file: a global cap slows kernels it pushes into spills or re-allocates (HLLC). A capped kernel may only
-                # call device routines compiled under the same cap (nvlink), hence m_hb_function with m_riemann_state.
+                # Per file: a global cap slows kernels it pushes into spills or re-allocates. A capped kernel may only call
+                # device routines compiled under the same cap (nvlink), hence m_hb_function with m_riemann_state and m_bubbles,
+                # m_eos with HLLC (once its three sweep directions inline alike, HLLC gains 3-7 % too).
                 # Case-optimized builds only: in generic builds the runtime-sized loops spill more under the cap (WENO5
                 # 120 B) and the IBM and viscous cases ran slower.
                 if (MFC_NVHPC_MAXREGCOUNT GREATER 0 AND MFC_CASE_OPTIMIZATION)
-                    foreach(_regcap_file m_weno m_riemann_solver_hll m_riemann_solver_lf m_riemann_state m_hb_function m_igr)
+                    foreach(_regcap_file m_weno m_riemann_solver_hll m_riemann_solver_lf m_riemann_solver_hllc m_riemann_state m_hb_function
+                                          m_bubbles m_eos m_igr)
                         set_source_files_properties(
                             "${CMAKE_BINARY_DIR}/fypp/${ARGS_TARGET}/${_regcap_file}.fpp.f90"
                             TARGET_DIRECTORY ${a_target}
