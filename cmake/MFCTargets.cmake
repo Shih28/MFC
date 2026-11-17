@@ -57,6 +57,13 @@ exit 0
         add_dependencies(${ARGS_TARGET} ${ARGS_TARGET}_lib)
         # s_prng_splitmix32: inlined, consecutive calls can all return the last draw (seen with the former xorshift, NVHPC CPU)
         target_compile_options(${ARGS_TARGET} PRIVATE -Minline=lib:${ARGS_TARGET}_lib,except:f_is_default,except:s_compute_dt,except:my_inquire,except:s_mpi_abort,except:s_mpi_barrier,except:s_prohibit_abort,except:s_int_to_str,except:s_associate_cbc_coefficients_pointers,except:s_prng_splitmix32)
+        # The default inline budget is spent on the first of the three Fypp-generated sweep directions of a Riemann solver;
+        # the y and z kernels then call the EOS and state helpers out of line, through local memory. Raise it so all three
+        # inline. Simulation only: with the larger budget nvfortran 25.9 fails on pre_process ("Unable to open file
+        # pre_process_lib/s_compute_species_fraction-... while extracting or inlining"), which has no such kernels.
+        if (ARGS_TARGET STREQUAL "simulation")
+            target_compile_options(${ARGS_TARGET} PRIVATE -Minline=totalsize:200000,maxsize:20000)
+        endif()
 
         # Exclude these files from cross-file inlining. GPU hot-path files
         # (m_rhs, m_riemann_solvers, m_viscous, m_weno, etc.) keep full IPO.
