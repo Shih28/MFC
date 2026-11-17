@@ -23,6 +23,8 @@ option(MFC_OpenMP        "Build with OpenMP"                                 OFF
 option(MFC_GCov          "Build with GCov"                                   OFF)
 option(MFC_Unified       "Build with unified CPU & GPU memory (GH-200 only)" OFF)
 option(MFC_Fastmath      "Build with -gpu=fastmath on NV GPUs"               OFF)
+option(MFC_CASE_OPTIMIZATION "Set by the toolchain for --case-optimization builds" OFF)
+set(MFC_NVHPC_MAXREGCOUNT 128 CACHE STRING "NVHPC register cap for the WENO and HLL/LF Riemann kernels of case-optimized builds (-gpu=maxregcount); 0 disables")
 option(MFC_PRE_PROCESS   "Build pre_process"                                 OFF)
 option(MFC_SIMULATION    "Build simulation"                                  OFF)
 option(MFC_POST_PROCESS  "Build post_process"                                OFF)
