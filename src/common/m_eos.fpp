@@ -330,14 +330,16 @@ contains
         real(wp), intent(out) :: rho, gamma, pi_inf, dpi, dgamma
 
         rho = max(alpha_rho, sgm_eps)/max(alpha, sgm_eps)
-        if (any_state_dependent_eos) then
+        ! any_state_dependent_eos is this Fypp flag; a call left behind, even under a false parameter, stops nvfortran inlining
+        ! this routine's callers across files into the Riemann and conversion kernels
+        #:if eos_state_dependent
             call s_eos_coefficients(rho, i, gamma, pi_inf, dpi, dgamma)
-        else
+        #:else
             gamma = gammas(i)
             pi_inf = pi_infs(i)
             dpi = 0._wp
             dgamma = 0._wp
-        end if
+        #:endif
 
     end subroutine s_phase_coefficients
 
@@ -607,7 +609,12 @@ contains
                 rho_K = rho_K + alpha_rho_K(i)
                 alpha_rho_i = alpha_rho_K(i)
                 alpha_i = alpha_K(i)
-                call s_phase_coefficients(alpha_rho_i, alpha_i, i, rho_i, gamma_i, pi_inf_i, dpi_i, dgamma_i)
+                #:if eos_state_dependent
+                    call s_phase_coefficients(alpha_rho_i, alpha_i, i, rho_i, gamma_i, pi_inf_i, dpi_i, dgamma_i)
+                #:else
+                    gamma_i = gammas(i)
+                    pi_inf_i = pi_infs(i)
+                #:endif
                 gamma_K = gamma_K + alpha_K(i)*gamma_i
                 pi_inf_K = pi_inf_K + alpha_K(i)*pi_inf_i
                 qv_K = qv_K + alpha_rho_K(i)*qvs(i)
@@ -684,7 +691,8 @@ contains
         else
             ! Every case below is a bulk modulus over a density. The equation of state enters
             ! only through f_bulk_modulus; the cases differ in how the phases are mixed.
-            if (any_state_dependent_eos .and. present(alpha_rho)) then  ! frozen mixing: each phase's modulus at its own density
+            #:if eos_state_dependent
+            if (present(alpha_rho)) then  ! frozen mixing: each phase's modulus at its own density
                 c = 0._wp
                 $:GPU_LOOP(parallelism='[seq]')
                 do q = 1, num_fluids
@@ -703,6 +711,9 @@ contains
                     c = c/rho
                 end if
             else if (alt_soundspeed) then  ! Wood's law: volume-weighted harmonic mean
+            #:else
+            if (alt_soundspeed) then  ! Wood's law: volume-weighted harmonic mean
+            #:endif
                 c = 0._wp
                 $:GPU_LOOP(parallelism='[seq]')
                 do q = 1, num_fluids
