@@ -200,8 +200,10 @@ contains
                                     E_L = rho_L*E_L + 5.e-1*rho_L*vel_L_rms
                                     E_R = rho_R*E_R + 5.e-1*rho_R*vel_R_rms
                                 else
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
                                 end if
 
                                 call s_compute_speed_of_sound(pres_L, rho_L, gamma_L, pi_inf_L, alpha_L, c_L, alpha_rho_L)

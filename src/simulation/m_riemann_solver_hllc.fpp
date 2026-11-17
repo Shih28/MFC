@@ -267,8 +267,10 @@ contains
                                         call s_compute_interface_reynolds(alpha_R, Re_R, Re_size_loc1, Re_size_loc2)
                                     end if
 
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
 
                                     H_L = (E_L + pres_L)/rho_L
                                     H_R = (E_R + pres_R)/rho_R
@@ -559,8 +561,10 @@ contains
                                     pres_L = qL_prim_rsx_vf(${SF('')}$, eqn_idx%E)
                                     pres_R = qR_prim_rsx_vf(${SF(' + 1')}$, eqn_idx%E)
 
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
 
                                     H_L = (E_L + pres_L)/rho_L
                                     H_R = (E_R + pres_R)/rho_R
@@ -1058,8 +1062,10 @@ contains
                                             H_L = (E_L + pres_L)/rho_L
                                             H_R = (E_R + pres_R)/rho_R
                                         else
-                                            call s_compute_energy(pres_L, alpha_rho_L, alpha_lim_L, vel_L_rms, E_L)
-                                            call s_compute_energy(pres_R, alpha_rho_R, alpha_lim_R, vel_R_rms, E_R)
+                                            call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                               & alpha_lim_L(num_fluids), vel_L_rms, E_L)
+                                            call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                               & alpha_lim_R(num_fluids), vel_R_rms, E_R)
 
                                             H_L = (E_L + pres_L)/rho_L
                                             H_R = (E_R + pres_R)/rho_R

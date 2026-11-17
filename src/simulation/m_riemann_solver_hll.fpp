@@ -279,17 +279,21 @@ contains
                                         pres_mag%L = 0.5_wp*(B%L(1)**2._wp + B%L(2)**2._wp + B%L(3)**2._wp)
                                         pres_mag%R = 0.5_wp*(B%R(1)**2._wp + B%R(2)**2._wp + B%R(3)**2._wp)
                                     #:endif
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
                                     E_L = E_L + pres_mag%L
                                     ! includes magnetic energy
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
                                     E_R = E_R + pres_mag%R
                                     H_L = (E_L + pres_L - pres_mag%L)/rho_L
                                     ! stagnation enthalpy here excludes magnetic energy (only used to find speed of sound)
                                     H_R = (E_R + pres_R - pres_mag%R)/rho_R
                                 else
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
                                     H_L = (E_L + pres_L)/rho_L
                                     H_R = (E_R + pres_R)/rho_R
                                 end if
