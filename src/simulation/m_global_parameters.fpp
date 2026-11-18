@@ -486,7 +486,9 @@ contains
         muscl_eps = dflt_real
         weno_eps = dflt_real
         teno_CT = dflt_real
-        mp_weno = .false.
+        #:if not MFC_CASE_OPTIMIZATION
+            mp_weno = .false.
+        #:endif
         weno_avg = .false.
         weno_Re_flux = .false.
         riemann_hypo_ADC = .false.
@@ -1184,8 +1186,8 @@ contains
         $:GPU_UPDATE(device='[cfl_target, m, n, p]')
 
         $:GPU_UPDATE(device='[alt_soundspeed, acoustic_source, num_source]')
-        $:GPU_UPDATE(device='[dt, sys_size, buff_size, eqn_idx, mpp_lim, alt_soundspeed, &
-                     & avg_state, model_eqns, mixture_err, grid_geometry, cyl_coord, mp_weno, weno_eps, teno_CT, low_Mach, ib]')
+        $:GPU_UPDATE(device='[dt, sys_size, buff_size, eqn_idx, mpp_lim, alt_soundspeed, avg_state, model_eqns, mixture_err, &
+                     & grid_geometry, cyl_coord, weno_eps, teno_CT, low_Mach, ib]')
         $:GPU_UPDATE(device='[riemann_hypo_ADC, ADC_kappa, hll_u_interface, hypo_hll_interface_rhs, hypo_nc_mode]')
 
         $:GPU_UPDATE(device='[Bx0]')
@@ -1205,7 +1207,7 @@ contains
             $:GPU_UPDATE(device='[muscl_order, muscl_lim]')
             $:GPU_UPDATE(device='[igr, igr_order]')
             $:GPU_UPDATE(device='[num_fluids, num_dims, viscous, num_vels, nb, muscl_lim]')
-            $:GPU_UPDATE(device='[bubbles_euler, hypoelasticity, cont_damage, hyper_cleaning]')
+            $:GPU_UPDATE(device='[bubbles_euler, hypoelasticity, cont_damage, hyper_cleaning, mp_weno]')
         #:endif
 
         $:GPU_UPDATE(device='[int_comp, ic_eps, ic_beta]')

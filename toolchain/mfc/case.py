@@ -389,7 +389,9 @@ gbl_id = patch_ib(i)%gbl_patch_id
             viscous = 1 if self.params.get("viscous", "F") == "T" else 0
             # Physics-model switches: as compile-time constants their unused branches leave the hot kernels, which lowers
             # register pressure (and removes spills) in the Riemann-solver and conversion kernels
-            model_flags = {f: (1 if self.params.get(f, "F") == "T" else 0) for f in ("bubbles_euler", "bubbles_lagrange", "cont_damage", "hyper_cleaning", "hypoelasticity", "qbmm", "surface_tension")}
+            model_flags = {
+                f: (1 if self.params.get(f, "F") == "T" else 0) for f in ("bubbles_euler", "bubbles_lagrange", "cont_damage", "hyper_cleaning", "hypoelasticity", "mp_weno", "qbmm", "surface_tension")
+            }
 
             # Case optimization compiles only the selected Riemann solver; -1 (unpinned) compiles all (see m_riemann_solvers).
             riemann_solver = int(self.params.get("riemann_solver", -1))
@@ -428,6 +430,7 @@ gbl_id = patch_ib(i)%gbl_patch_id
 #:set cont_damage           = {model_flags["cont_damage"]}
 #:set hyper_cleaning        = {model_flags["hyper_cleaning"]}
 #:set hypoelasticity        = {model_flags["hypoelasticity"]}
+#:set mp_weno               = {model_flags["mp_weno"]}
 #:set qbmm                  = {model_flags["qbmm"]}
 #:set surface_tension       = {model_flags["surface_tension"]}
 #:set riemann_solver        = {riemann_solver}

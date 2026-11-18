@@ -67,6 +67,7 @@ CASE_OPT_PARAMS = {
     "cont_damage",
     "hyper_cleaning",
     "hypoelasticity",
+    "mp_weno",
     "qbmm",
     "surface_tension",
 }
