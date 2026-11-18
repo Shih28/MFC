@@ -1024,7 +1024,7 @@ contains
             real(wp), dimension(0:weno_num_stencils)        :: beta
             real(wp), dimension(0:weno_num_stencils)        :: delta
         #:endif
-        real(wp), dimension(-3:3) :: v  !< temporary field value array for clarity (WENO7 only)
+        real(wp), dimension(-3:3) :: v               !< temporary field value array for clarity (WENO7 only)
         real(wp)                  :: tau
         integer                   :: i, j, k, l, q
         real(wp)                  :: vp0, vp1, vp2, vp3, vm1, vm2, vm3
@@ -1366,9 +1366,9 @@ contains
                                             omega(1) = alpha(1)/(alpha(0) + alpha(1) + alpha(2))
                                             omega(2) = alpha(2)/(alpha(0) + alpha(1) + alpha(2))
                                             vR_rec = omega(0)*poly(0) + omega(1)*poly(1) + omega(2)*poly(2)
-                                        if (mp_weno) call s_mp_limit(vL_rec, vR_rec, vm2, vm1, vp0, vp1, vp2)
-                                        vL_rs_vf_x(j, k, l, i) = vL_rec
-                                        vR_rs_vf_x(j, k, l, i) = vR_rec
+                                            if (mp_weno) call s_mp_limit(vL_rec, vR_rec, vm2, vm1, vp0, vp1, vp2)
+                                            vL_rs_vf_x(j, k, l, i) = vL_rec
+                                            vR_rs_vf_x(j, k, l, i) = vR_rec
                                         end do
                                     end do
                                 end do
