@@ -46,118 +46,8 @@ contains
         ! Compiled only when case optimization selects this solver
 
         #:if not MFC_CASE_OPTIMIZATION or riemann_solver in (-1, 2)
-            #:if not MFC_CASE_OPTIMIZATION and USING_AMD
-                real(wp), dimension(3) :: alpha_rho_L, alpha_rho_R
-                real(wp), dimension(3) :: alpha_L, alpha_R
-                real(wp), dimension(3) :: alpha_lim_L, alpha_lim_R
-                real(wp), dimension(3) :: vel_L, vel_R
-            #:else
-                real(wp), dimension(num_fluids) :: alpha_rho_L, alpha_rho_R
-                real(wp), dimension(num_fluids) :: alpha_L, alpha_R
-                !> Post-limiter volume fractions (alpha_L/R retain the pre-limiter loads used downstream)
-                real(wp), dimension(num_fluids) :: alpha_lim_L, alpha_lim_R
-                real(wp), dimension(num_dims)   :: vel_L, vel_R
-            #:endif
-
-            real(wp)                             :: rho_L, rho_R
-            real(wp)                             :: pres_L, pres_R
-            real(wp)                             :: E_L, E_R
-            real(wp)                             :: H_L, H_R
-            real(wp), dimension(${NUM_SPECIES}$) :: Ys_L, Ys_R, Xs_L, Xs_R, Gamma_iL, Gamma_iR, Cp_iL, Cp_iR, R_species, h_iL, h_iR
-            real(wp)                             :: c_sum_Yi_Phi
-            real(wp)                             :: T_L, T_R
-            real(wp)                             :: MW_L, MW_R
-            real(wp)                             :: R_gas_L, R_gas_R
-            real(wp)                             :: Cp_L, Cp_R
-            real(wp)                             :: Cv_L, Cv_R
-            real(wp)                             :: Gamm_L, Gamm_R
-            real(wp)                             :: Y_L, Y_R
-            real(wp)                             :: gamma_L, gamma_R
-            real(wp)                             :: pi_inf_L, pi_inf_R
-            real(wp)                             :: qv_L, qv_R
-            real(wp)                             :: c_L, c_R
-            real(wp), dimension(2)               :: Re_L, Re_R
-            real(wp)                             :: rho_avg
-            real(wp)                             :: H_avg
-            real(wp)                             :: gamma_avg
-            real(wp)                             :: qv_avg
-            real(wp)                             :: c_avg
-            real(wp)                             :: s_L, s_R, s_M, s_P, s_S
-            real(wp)                             :: xi_L, xi_R        !< Left and right wave speeds functions
-            real(wp)                             :: xi_L_m1, xi_R_m1  !< xi_L/R - 1, computed without cancellation
-            real(wp)                             :: xi_M, xi_P, xi_tan
-            real(wp)                             :: xi_MP, xi_PP
-            #:if not MFC_CASE_OPTIMIZATION and USING_AMD
-                real(wp), dimension(3) :: R0_L, R0_R
-                real(wp), dimension(3) :: V0_L, V0_R
-                real(wp), dimension(3) :: P0_L, P0_R
-                real(wp), dimension(3) :: pbw_L, pbw_R
-            #:else
-                real(wp), dimension(nb) :: R0_L, R0_R
-                real(wp), dimension(nb) :: V0_L, V0_R
-                real(wp), dimension(nb) :: P0_L, P0_R
-                real(wp), dimension(nb) :: pbw_L, pbw_R
-            #:endif
-
-            real(wp)               :: alpha_L_sum, alpha_R_sum, nbub_L, nbub_R
-            real(wp)               :: ptilde_L, ptilde_R
-            real(wp)               :: PbwR3Lbar, PbwR3Rbar
-            real(wp)               :: R3Lbar, R3Rbar
-            real(wp)               :: R3V2Lbar, R3V2Rbar
-            real(wp), dimension(6) :: tau_e_L, tau_e_R
-            real(wp)               :: G_L, G_R
-            real(wp)               :: damage_L, damage_R
-            real(wp)               :: solid_partial_density_L, solid_partial_density_R
-            real(wp)               :: vel_L_rms, vel_R_rms, vel_avg_rms
-            real(wp)               :: rho_Star, E_Star, p_Star, p_K_Star, vel_K_star
-            real(wp)               :: alpha_K_star, alpha_rho_K_star, p_isen_L, p_isen_R, e_K_star
-            real(wp)               :: pres_SL, pres_SR, Ms_L, Ms_R
-            real(wp)               :: pcorr          !< low Mach number correction
-            logical                :: ib_fw          !< ib_flux_wall: a face between a fluid cell and a body's cell
-            integer                :: fw_o           !< its body cell's offset from the face's left cell (0 or 1)
-            real(wp)               :: fw_a, fw_m     !< signed share of the wall rates, their mass flux
-            integer                :: i, j, k, l, q  !< Generic loop iterators
             !> host copy of Re_size; amdflang reads the declare-target original stale cross-TU
             integer :: Re_size_loc1, Re_size_loc2
-
-            ! HLLC star-state helpers
-            #:if not MFC_CASE_OPTIMIZATION and USING_AMD
-                real(wp), dimension(${AMD_SYS_SIZE_MAX}$) :: U_L, U_R
-                real(wp), dimension(${AMD_SYS_SIZE_MAX}$) :: F_L, F_R, F_star_L, F_star_R, F_HLLC
-            #:else
-                real(wp), dimension(sys_size) :: U_L, U_R
-                real(wp), dimension(sys_size) :: F_L, F_R, F_star_L, F_star_R, F_HLLC
-            #:endif
-            real(wp) :: u_n_HLLC, u_t_HLLC, u_t2_HLLC
-            real(wp) :: pres_tot_L, pres_tot_R
-            real(wp) :: u_n_L, u_n_R, u_t_L, u_t_R
-            real(wp) :: u_t2_L, u_t2_R
-            real(wp) :: tau_nn_L, tau_nn_R, tau_nt_L, tau_nt_R, tau_tt_L, tau_tt_R
-            real(wp) :: tau_nt2_L, tau_nt2_R, tau_t2t2_L, tau_t2t2_R, tau_t1t2_L, tau_t1t2_R
-            real(wp) :: tau_qq_L, tau_qq_R
-            real(wp) :: p_face, tau_qq_face
-            real(wp) :: A_L, A_R, denom_A
-            real(wp) :: u_t_star, tau_nt_star
-            real(wp) :: u_t2_star, tau_nt2_star
-            real(wp) :: pres_tot_star
-            integer  :: idx_phys
-
-            ! ADC (HLL -> HLLC)
-            #:if not MFC_CASE_OPTIMIZATION and USING_AMD
-                real(wp), dimension(${AMD_SYS_SIZE_MAX}$) :: F_HLL
-            #:else
-                real(wp), dimension(sys_size) :: F_HLL
-            #:endif
-            real(wp)            :: u_n_HLL_trace, u_t_HLL_trace
-            real(wp)            :: u_t2_HLL_trace
-            real(wp)            :: p_face_HLL, tau_qq_face_HLL, tau_nn_HLL
-            real(wp)            :: phi
-            real(wp)            :: Sigma_L, Sigma_R, dSigma, Sigma_ref
-            real(wp)            :: a_L_ref, a_R_ref, a_ref
-            real(wp)            :: du_t, dtau_nt
-            real(wp)            :: du_t2, dtau_nt2
-            real(wp)            :: sensor_ptot, sensor_vt, sensor_tnt, sensor_combined
-            real(wp), parameter :: ADC_power = 1.0_wp
 
             ! Populating the buffers of the left and right Riemann problem states variables, based on the choice of boundary
             ! conditions
@@ -171,10 +61,171 @@ contains
 
             Re_size_loc1 = Re_size(1); Re_size_loc2 = Re_size(2)
 
-            #:for NORM_DIR, XYZ, STENCIL_VAR, COORDS, X_BND, Y_BND, Z_BND in &
-                    [(1, 'x', 'j', '{STENCIL_IDX}, k, l', 'is1', 'is2', 'is3'), &
-                     (2, 'y', 'k', 'j, {STENCIL_IDX}, l', 'is2', 'is1', 'is3'), &
-                     (3, 'z', 'l', 'j, k, {STENCIL_IDX}', 'is3', 'is2', 'is1')]
+            ! One routine per sweep direction: nvfortran's cross-file inlining is budgeted per routine, and with all twelve
+            ! kernels (four models x three directions) in one routine the last ones kept their EOS calls out of line.
+            #:for NORM_DIR, XYZ in [(1, 'x'), (2, 'y'), (3, 'z')]
+                if (norm_dir == ${NORM_DIR}$) then
+                    call s_hllc_riemann_solver_${XYZ}$(qL_prim_rsx_vf, qR_prim_rsx_vf, norm_dir, Re_size_loc1, Re_size_loc2)
+                end if
+            #:endfor
+            ! Computing HLLC flux and source flux for Euler system of equations
+
+            if (viscous) then
+                if (weno_Re_flux) then
+                    call s_compute_viscous_source_flux(qL_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqL_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqL_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqL_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & qR_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqR_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqR_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqR_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), q_prim_vf, norm_dir, &
+                                                       & ix, iy, iz)
+                else
+                    call s_compute_viscous_source_flux(q_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqL_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqL_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqL_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & q_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqR_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqR_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
+                                                       & dqR_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), q_prim_vf, norm_dir, &
+                                                       & ix, iy, iz)
+                end if
+            end if
+
+            if (surface_tension) then
+                call s_compute_capillary_source_flux(vel_src_rsx_vf, norm_dir, isx, isy, isz)
+            end if
+        #:endif
+
+    end subroutine s_hllc_riemann_solver
+
+    #:if not MFC_CASE_OPTIMIZATION or riemann_solver in (-1, 2)
+        #:for NORM_DIR, XYZ, STENCIL_VAR, COORDS, X_BND, Y_BND, Z_BND in &
+    [(1, 'x', 'j', '{STENCIL_IDX}, k, l', 'is1', 'is2', 'is3'), &
+             (2, 'y', 'k', 'j, {STENCIL_IDX}, l', 'is2', 'is1', 'is3'), &
+             (3, 'z', 'l', 'j, k, {STENCIL_IDX}', 'is3', 'is2', 'is1')]
+            !> One sweep direction of s_hllc_riemann_solver (see there).
+            subroutine s_hllc_riemann_solver_${XYZ}$(qL_prim_rsx_vf, qR_prim_rsx_vf, norm_dir, Re_size_loc1, Re_size_loc2)
+
+                real(wp), dimension(idwbuff(1)%beg:,idwbuff(2)%beg:,idwbuff(3)%beg:,1:), intent(inout) :: qL_prim_rsx_vf, &
+                     & qR_prim_rsx_vf
+                integer, intent(in) :: norm_dir
+                integer, intent(in) :: Re_size_loc1, Re_size_loc2
+
+                #:if not MFC_CASE_OPTIMIZATION and USING_AMD
+                    real(wp), dimension(3) :: alpha_rho_L, alpha_rho_R
+                    real(wp), dimension(3) :: alpha_L, alpha_R
+                    real(wp), dimension(3) :: alpha_lim_L, alpha_lim_R
+                    real(wp), dimension(3) :: vel_L, vel_R
+                #:else
+                    real(wp), dimension(num_fluids) :: alpha_rho_L, alpha_rho_R
+                    real(wp), dimension(num_fluids) :: alpha_L, alpha_R
+                    !> Post-limiter volume fractions (alpha_L/R retain the pre-limiter loads used downstream)
+                    real(wp), dimension(num_fluids) :: alpha_lim_L, alpha_lim_R
+                    real(wp), dimension(num_dims)   :: vel_L, vel_R
+                #:endif
+
+                real(wp)                             :: rho_L, rho_R
+                real(wp)                             :: pres_L, pres_R
+                real(wp)                             :: E_L, E_R
+                real(wp)                             :: H_L, H_R
+                real(wp), dimension(${NUM_SPECIES}$) :: Ys_L, Ys_R, Xs_L, Xs_R, Gamma_iL, Gamma_iR, Cp_iL, Cp_iR, R_species, &
+                     & h_iL, h_iR
+                real(wp)               :: c_sum_Yi_Phi
+                real(wp)               :: T_L, T_R
+                real(wp)               :: MW_L, MW_R
+                real(wp)               :: R_gas_L, R_gas_R
+                real(wp)               :: Cp_L, Cp_R
+                real(wp)               :: Cv_L, Cv_R
+                real(wp)               :: Gamm_L, Gamm_R
+                real(wp)               :: Y_L, Y_R
+                real(wp)               :: gamma_L, gamma_R
+                real(wp)               :: pi_inf_L, pi_inf_R
+                real(wp)               :: qv_L, qv_R
+                real(wp)               :: c_L, c_R
+                real(wp), dimension(2) :: Re_L, Re_R
+                real(wp)               :: rho_avg
+                real(wp)               :: H_avg
+                real(wp)               :: gamma_avg
+                real(wp)               :: qv_avg
+                real(wp)               :: c_avg
+                real(wp)               :: s_L, s_R, s_M, s_P, s_S
+                real(wp)               :: xi_L, xi_R        !< Left and right wave speeds functions
+                real(wp)               :: xi_L_m1, xi_R_m1  !< xi_L/R - 1, computed without cancellation
+                real(wp)               :: xi_M, xi_P, xi_tan
+                real(wp)               :: xi_MP, xi_PP
+                #:if not MFC_CASE_OPTIMIZATION and USING_AMD
+                    real(wp), dimension(3) :: R0_L, R0_R
+                    real(wp), dimension(3) :: V0_L, V0_R
+                    real(wp), dimension(3) :: P0_L, P0_R
+                    real(wp), dimension(3) :: pbw_L, pbw_R
+                #:else
+                    real(wp), dimension(nb) :: R0_L, R0_R
+                    real(wp), dimension(nb) :: V0_L, V0_R
+                    real(wp), dimension(nb) :: P0_L, P0_R
+                    real(wp), dimension(nb) :: pbw_L, pbw_R
+                #:endif
+
+                real(wp)               :: alpha_L_sum, alpha_R_sum, nbub_L, nbub_R
+                real(wp)               :: ptilde_L, ptilde_R
+                real(wp)               :: PbwR3Lbar, PbwR3Rbar
+                real(wp)               :: R3Lbar, R3Rbar
+                real(wp)               :: R3V2Lbar, R3V2Rbar
+                real(wp), dimension(6) :: tau_e_L, tau_e_R
+                real(wp)               :: G_L, G_R
+                real(wp)               :: damage_L, damage_R
+                real(wp)               :: solid_partial_density_L, solid_partial_density_R
+                real(wp)               :: vel_L_rms, vel_R_rms, vel_avg_rms
+                real(wp)               :: rho_Star, E_Star, p_Star, p_K_Star, vel_K_star
+                real(wp)               :: alpha_K_star, alpha_rho_K_star, p_isen_L, p_isen_R, e_K_star
+                real(wp)               :: pres_SL, pres_SR, Ms_L, Ms_R
+                real(wp)               :: pcorr          !< low Mach number correction
+                logical                :: ib_fw          !< ib_flux_wall: a face between a fluid cell and a body's cell
+                integer                :: fw_o           !< its body cell's offset from the face's left cell (0 or 1)
+                real(wp)               :: fw_a, fw_m     !< signed share of the wall rates, their mass flux
+                integer                :: i, j, k, l, q  !< Generic loop iterators
+
+                ! HLLC star-state helpers
+                #:if not MFC_CASE_OPTIMIZATION and USING_AMD
+                    real(wp), dimension(${AMD_SYS_SIZE_MAX}$) :: U_L, U_R
+                    real(wp), dimension(${AMD_SYS_SIZE_MAX}$) :: F_L, F_R, F_star_L, F_star_R, F_HLLC
+                #:else
+                    real(wp), dimension(sys_size) :: U_L, U_R
+                    real(wp), dimension(sys_size) :: F_L, F_R, F_star_L, F_star_R, F_HLLC
+                #:endif
+                real(wp) :: u_n_HLLC, u_t_HLLC, u_t2_HLLC
+                real(wp) :: pres_tot_L, pres_tot_R
+                real(wp) :: u_n_L, u_n_R, u_t_L, u_t_R
+                real(wp) :: u_t2_L, u_t2_R
+                real(wp) :: tau_nn_L, tau_nn_R, tau_nt_L, tau_nt_R, tau_tt_L, tau_tt_R
+                real(wp) :: tau_nt2_L, tau_nt2_R, tau_t2t2_L, tau_t2t2_R, tau_t1t2_L, tau_t1t2_R
+                real(wp) :: tau_qq_L, tau_qq_R
+                real(wp) :: p_face, tau_qq_face
+                real(wp) :: A_L, A_R, denom_A
+                real(wp) :: u_t_star, tau_nt_star
+                real(wp) :: u_t2_star, tau_nt2_star
+                real(wp) :: pres_tot_star
+                integer  :: idx_phys
+
+                ! ADC (HLL -> HLLC)
+                #:if not MFC_CASE_OPTIMIZATION and USING_AMD
+                    real(wp), dimension(${AMD_SYS_SIZE_MAX}$) :: F_HLL
+                #:else
+                    real(wp), dimension(sys_size) :: F_HLL
+                #:endif
+                real(wp)            :: u_n_HLL_trace, u_t_HLL_trace
+                real(wp)            :: u_t2_HLL_trace
+                real(wp)            :: p_face_HLL, tau_qq_face_HLL, tau_nn_HLL
+                real(wp)            :: phi
+                real(wp)            :: Sigma_L, Sigma_R, dSigma, Sigma_ref
+                real(wp)            :: a_L_ref, a_R_ref, a_ref
+                real(wp)            :: du_t, dtau_nt
+                real(wp)            :: du_t2, dtau_nt2
+                real(wp)            :: sensor_ptot, sensor_vt, sensor_tnt, sensor_combined
+                real(wp), parameter :: ADC_power = 1.0_wp
+
                 #:set SV = STENCIL_VAR
                 #:set SF = lambda offs: COORDS.format(STENCIL_IDX = SV + offs)
                 if (norm_dir == ${NORM_DIR}$) then
@@ -267,8 +318,10 @@ contains
                                         call s_compute_interface_reynolds(alpha_R, Re_R, Re_size_loc1, Re_size_loc2)
                                     end if
 
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
 
                                     H_L = (E_L + pres_L)/rho_L
                                     H_R = (E_R + pres_R)/rho_R
@@ -559,8 +612,10 @@ contains
                                     pres_L = qL_prim_rsx_vf(${SF('')}$, eqn_idx%E)
                                     pres_R = qR_prim_rsx_vf(${SF(' + 1')}$, eqn_idx%E)
 
-                                    call s_compute_energy(pres_L, alpha_rho_L, alpha_L, vel_L_rms, E_L)
-                                    call s_compute_energy(pres_R, alpha_rho_R, alpha_R, vel_R_rms, E_R)
+                                    call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                       & alpha_L(num_fluids), vel_L_rms, E_L)
+                                    call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                       & alpha_R(num_fluids), vel_R_rms, E_R)
 
                                     H_L = (E_L + pres_L)/rho_L
                                     H_R = (E_R + pres_R)/rho_R
@@ -872,35 +927,35 @@ contains
                             ! Private variables come from one list: both emissions take _hllc_s*/_hllc_a*, only the hypoelastic one
                             ! adds _hllc_e*/_hllc_ea (separate lists drifted and raced under OpenMP offload).
                             #:set _hllc_s1 = ['i', 'j', 'k', 'l', 'q', 'T_L', 'T_R', 'vel_L_rms', 'vel_R_rms', 'pres_L', 'pres_R', &
-                                & 'rho_L', 'gamma_L', 'pi_inf_L', 'qv_L', 'rho_R', 'gamma_R']
+                            & 'rho_L', 'gamma_L', 'pi_inf_L', 'qv_L', 'rho_R', 'gamma_R']
                             #:set _hllc_s2 = ['pi_inf_R', 'qv_R', 'alpha_L_sum', 'alpha_R_sum', 'E_L', 'E_R', 'MW_L', 'MW_R', &
-                                & 'R_gas_L', 'R_gas_R', 'Cp_L', 'Cp_R', 'Cv_L', 'Cv_R', 'c_sum_Yi_Phi']
+                            & 'R_gas_L', 'R_gas_R', 'Cp_L', 'Cp_R', 'Cv_L', 'Cv_R', 'c_sum_Yi_Phi']
                             #:set _hllc_s3 = ['Gamm_L', 'Gamm_R', 'Y_L', 'Y_R', 'H_L', 'H_R', 'qv_avg', 'rho_avg', 'gamma_avg', &
-                                & 'H_avg', 'c_L', 'c_R', 'c_avg', 's_P', 's_M', 'xi_P', 'xi_M', 'xi_tan', 'xi_L']
+                            & 'H_avg', 'c_L', 'c_R', 'c_avg', 's_P', 's_M', 'xi_P', 'xi_M', 'xi_tan', 'xi_L']
                             #:set _hllc_s4 = ['xi_R', 'xi_L_m1', 'xi_R_m1', 'Ms_L', 'Ms_R', 'pres_SL', 'pres_SR', 's_L', 's_R', &
-                                & 's_S', 'vel_avg_rms', 'pcorr']
+                            & 's_S', 'vel_avg_rms', 'pcorr']
                             #:set _hllc_s5 = ['ib_fw', 'fw_o', 'fw_a', 'fw_m']
                             #:set _hllc_a1 = ['vel_L', 'vel_R', 'Re_L', 'Re_R', 'alpha_L', 'alpha_R', 'alpha_rho_L', 'alpha_rho_R', &
-                                & 'alpha_lim_L', 'alpha_lim_R']
+                            & 'alpha_lim_L', 'alpha_lim_R']
                             #:set _hllc_a2 = ['Ys_L', 'Ys_R', 'Xs_L', 'Xs_R', 'Gamma_iL', 'Gamma_iR', 'Cp_iL', 'Cp_iR', 'R_species', &
-                                & 'h_iL', 'h_iR']
+                            & 'h_iL', 'h_iR']
                             #:set _hllc_e1 = ['ptilde_L', 'ptilde_R', 'G_L', 'G_R', 'damage_L', 'damage_R', 'solid_partial_density_L', &
-                                & 'solid_partial_density_R']
+                            & 'solid_partial_density_R']
                             #:set _hllc_ea = ['tau_e_L', 'tau_e_R', 'U_L', 'U_R', 'F_L', 'F_R', 'F_star_L', 'F_star_R', 'F_HLLC', &
-                                & 'F_HLL']
+                            & 'F_HLL']
                             #:set _hllc_e2 = ['u_n_HLLC', 'u_t_HLLC', 'u_t2_HLLC', 'pres_tot_L', 'pres_tot_R', 'u_n_L', 'u_n_R', &
-                                & 'u_t_L', 'u_t_R', 'u_t2_L', 'u_t2_R', 'tau_nn_L', 'tau_nn_R']
+                            & 'u_t_L', 'u_t_R', 'u_t2_L', 'u_t2_R', 'tau_nn_L', 'tau_nn_R']
                             #:set _hllc_e3 = ['tau_nt_L', 'tau_nt_R', 'tau_tt_L', 'tau_tt_R', 'tau_nt2_L', 'tau_nt2_R', 'tau_t2t2_L', &
-                                & 'tau_t2t2_R', 'tau_t1t2_L', 'tau_t1t2_R', 'tau_qq_L', 'tau_qq_R']
+                            & 'tau_t2t2_R', 'tau_t1t2_L', 'tau_t1t2_R', 'tau_qq_L', 'tau_qq_R']
                             #:set _hllc_e4 = ['p_face', 'tau_qq_face', 'A_L', 'A_R', 'denom_A', 'u_t_star', 'tau_nt_star', &
-                                & 'u_t2_star', 'tau_nt2_star', 'pres_tot_star', 'u_n_HLL_trace']
+                            & 'u_t2_star', 'tau_nt2_star', 'pres_tot_star', 'u_n_HLL_trace']
                             #:set _hllc_e5 = ['u_t_HLL_trace', 'u_t2_HLL_trace', 'p_face_HLL', 'tau_qq_face_HLL', 'tau_nn_HLL', &
-                                & 'phi', 'Sigma_L', 'Sigma_R', 'dSigma', 'Sigma_ref', 'a_L_ref']
+                            & 'phi', 'Sigma_L', 'Sigma_R', 'dSigma', 'Sigma_ref', 'a_L_ref']
                             #:set _hllc_e6 = ['a_R_ref', 'a_ref', 'du_t', 'dtau_nt', 'du_t2', 'dtau_nt2', 'sensor_ptot', 'sensor_vt', &
-                                & 'sensor_tnt', 'sensor_combined', 'idx_phys']
+                            & 'sensor_tnt', 'sensor_combined', 'idx_phys']
                             #:if HYPO
                                 #:set _hllc_priv = '[' + ', '.join(_hllc_s1 + _hllc_s2 + _hllc_s3 + _hllc_s4 + _hllc_s5 + _hllc_e1 &
-                                                                   & + _hllc_e2 + _hllc_e3 + _hllc_e4 + _hllc_e5 + _hllc_e6) + ']'
+                                                               & + _hllc_e2 + _hllc_e3 + _hllc_e4 + _hllc_e5 + _hllc_e6) + ']'
                                 #:set _hllc_arr = '[' + ', '.join(_hllc_a1 + _hllc_a2 + _hllc_ea) + ']'
                             #:else
                                 #:set _hllc_priv = '[' + ', '.join(_hllc_s1 + _hllc_s2 + _hllc_s3 + _hllc_s4 + _hllc_s5) + ']'
@@ -1058,8 +1113,10 @@ contains
                                             H_L = (E_L + pres_L)/rho_L
                                             H_R = (E_R + pres_R)/rho_R
                                         else
-                                            call s_compute_energy(pres_L, alpha_rho_L, alpha_lim_L, vel_L_rms, E_L)
-                                            call s_compute_energy(pres_R, alpha_rho_R, alpha_lim_R, vel_R_rms, E_R)
+                                            call s_compute_energy_from_mixture(pres_L, rho_L, gamma_L, pi_inf_L, qv_L, &
+                                                                               & alpha_lim_L(num_fluids), vel_L_rms, E_L)
+                                            call s_compute_energy_from_mixture(pres_R, rho_R, gamma_R, pi_inf_R, qv_R, &
+                                                                               & alpha_lim_R(num_fluids), vel_R_rms, E_R)
 
                                             H_L = (E_L + pres_L)/rho_L
                                             H_R = (E_R + pres_R)/rho_R
@@ -1671,38 +1728,8 @@ contains
                         #:endfor
                     end if
                 end if
-            #:endfor
-            ! Computing HLLC flux and source flux for Euler system of equations
 
-            if (viscous) then
-                if (weno_Re_flux) then
-                    call s_compute_viscous_source_flux(qL_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqL_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqL_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqL_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & qR_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqR_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqR_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqR_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), q_prim_vf, norm_dir, &
-                                                       & ix, iy, iz)
-                else
-                    call s_compute_viscous_source_flux(q_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqL_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqL_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqL_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & q_prim_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqR_prim_dx_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqR_prim_dy_vf(eqn_idx%mom%beg:eqn_idx%mom%end), &
-                                                       & dqR_prim_dz_vf(eqn_idx%mom%beg:eqn_idx%mom%end), q_prim_vf, norm_dir, &
-                                                       & ix, iy, iz)
-                end if
-            end if
-
-            if (surface_tension) then
-                call s_compute_capillary_source_flux(vel_src_rsx_vf, norm_dir, isx, isy, isz)
-            end if
-        #:endif
-
-    end subroutine s_hllc_riemann_solver
-
+            end subroutine s_hllc_riemann_solver_${XYZ}$
+        #:endfor
+    #:endif
 end module m_riemann_solver_hllc

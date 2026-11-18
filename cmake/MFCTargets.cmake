@@ -57,6 +57,13 @@ exit 0
         add_dependencies(${ARGS_TARGET} ${ARGS_TARGET}_lib)
         # s_prng_splitmix32: inlined, consecutive calls can all return the last draw (seen with the former xorshift, NVHPC CPU)
         target_compile_options(${ARGS_TARGET} PRIVATE -Minline=lib:${ARGS_TARGET}_lib,except:f_is_default,except:s_compute_dt,except:my_inquire,except:s_mpi_abort,except:s_mpi_barrier,except:s_prohibit_abort,except:s_int_to_str,except:s_associate_cbc_coefficients_pointers,except:s_prng_splitmix32)
+        # The default inline budget is spent on the first of the three Fypp-generated sweep directions of a Riemann solver;
+        # the y and z kernels then call the EOS and state helpers out of line, through local memory. Raise it so all three
+        # inline. Simulation only: with the larger budget nvfortran 25.9 fails on pre_process ("Unable to open file
+        # pre_process_lib/s_compute_species_fraction-... while extracting or inlining"), which has no such kernels.
+        if (ARGS_TARGET STREQUAL "simulation")
+            target_compile_options(${ARGS_TARGET} PRIVATE -Minline=totalsize:200000,maxsize:20000)
+        endif()
 
         # Exclude these files from cross-file inlining. GPU hot-path files
         # (m_rhs, m_riemann_solvers, m_viscous, m_weno, etc.) keep full IPO.
@@ -259,6 +266,25 @@ exit 0
                 target_compile_options(${a_target}
                     PRIVATE -gpu=keep,ptxinfo,lineinfo
                 )
+
+                # Uncapped, the WENO, HLL/LF Riemann, viscous-flux and IGR kernels take 140-250 registers: two or three
+                # 128-thread blocks per SM, latency-bound. At 128 registers four blocks fit for a few bytes of spill (H200,
+                # case-optimized: WENO5 -32 % and HLL -24 % kernel time; IGR case +19 %, IBM and viscous cases +4.7 %).
+                # Per file: a global cap slows kernels it pushes into spills or re-allocates. A capped kernel may only call
+                # device routines compiled under the same cap (nvlink), hence m_hb_function with m_riemann_state and m_bubbles,
+                # m_eos with HLLC (once its three sweep directions inline alike, HLLC gains 3-7 % too).
+                # Case-optimized builds only: in generic builds the runtime-sized loops spill more under the cap (WENO5
+                # 120 B) and the IBM and viscous cases ran slower.
+                if (MFC_NVHPC_MAXREGCOUNT GREATER 0 AND MFC_CASE_OPTIMIZATION)
+                    foreach(_regcap_file m_weno m_riemann_solver_hll m_riemann_solver_lf m_riemann_solver_hllc m_riemann_state m_hb_function
+                                          m_bubbles m_eos m_igr)
+                        set_source_files_properties(
+                            "${CMAKE_BINARY_DIR}/fypp/${ARGS_TARGET}/${_regcap_file}.fpp.f90"
+                            TARGET_DIRECTORY ${a_target}
+                            PROPERTIES COMPILE_OPTIONS "-gpu=maxregcount:${MFC_NVHPC_MAXREGCOUNT}"
+                        )
+                    endforeach()
+                endif()
 
                 if (MFC_Fastmath)
                     target_compile_options(${a_target}

@@ -26,10 +26,10 @@ module m_variables_conversion
         & s_convert_mixture_to_mixture_variables, s_convert_species_to_mixture_variables, &
         & s_convert_species_to_mixture_variables_kernel, s_convert_conservative_to_primitive_variables, &
         & s_convert_primitive_to_conservative_variables, s_convert_primitive_to_flux_variables, s_compute_pressure, &
-        & s_compute_species_fraction, s_compute_mixture_coefficients, s_compute_energy, s_compute_speed_of_sound, &
-        & s_compute_mixture_coefficients_dt, s_compute_speed_of_sound_avg, s_compute_fast_magnetosonic_speed, f_elastic_energy, &
-        & f_hypoelastic_energy, s_finalize_variables_conversion_module, gammas, isentrope_n, pi_infs, isentrope_B, cvs, qvs, &
-        & qvps, enforce_density_floor_vc
+        & s_compute_species_fraction, s_compute_mixture_coefficients, s_compute_energy, s_compute_energy_from_mixture, &
+        & s_compute_speed_of_sound, s_compute_mixture_coefficients_dt, s_compute_speed_of_sound_avg, &
+        & s_compute_fast_magnetosonic_speed, f_elastic_energy, f_hypoelastic_energy, s_finalize_variables_conversion_module, &
+        & gammas, isentrope_n, pi_infs, isentrope_B, cvs, qvs, qvps, enforce_density_floor_vc
 
     real(wp), allocatable, dimension(:)   :: Gs_vc
     integer, allocatable, dimension(:)    :: bubrs_vc
@@ -1230,6 +1230,25 @@ contains
         E = E + qv + 5.e-1_wp*rho*vel_sum
 
     end subroutine s_compute_energy
+
+    !> s_compute_energy for a caller that already holds the mixture coefficients of this state (from s_compute_mixture_coefficients
+    !! on the same alpha_rho and alpha): same formula, same rounding, no second pass over the fluids. A leaf routine, so nvfortran
+    !! inlines it across files; s_compute_energy calls s_compute_mixture_coefficients and stays an out-of-line call inside the
+    !! Riemann kernels.
+    subroutine s_compute_energy_from_mixture(pres, rho, gamma, pi_inf, qv, alf, vel_sum, E)
+
+        $:GPU_ROUTINE(function_name='s_compute_energy_from_mixture', parallelism='[seq]', cray_inline=True)
+
+        real(wp), intent(in)  :: pres, rho, gamma, pi_inf, qv
+        real(wp), intent(in)  :: alf  !< alpha_K(num_fluids), read only under bubbles_euler
+        real(wp), intent(in)  :: vel_sum
+        real(wp), intent(out) :: E
+
+        E = gamma*pres + pi_inf
+        if (bubbles_euler) E = E*(1._wp - alf)
+        E = E + qv + 5.e-1_wp*rho*vel_sum
+
+    end subroutine s_compute_energy_from_mixture
 
     !> Elastic strain energy of one stress component, doubled for a shear component: the tensor stores it once, the energy counts
     !! both off-diagonal entries. Zero without a shear modulus.

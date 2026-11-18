@@ -216,7 +216,10 @@ contains
 
         call s_count_lag_entities_glb(n_el_bubs_loc, n_el_bubs_glb, lag_params%input_path)
 
-        $:GPU_UPDATE(device='[bubbles_lagrange, lag_params]')
+        $:GPU_UPDATE(device='[lag_params]')
+        #:if not MFC_CASE_OPTIMIZATION
+            $:GPU_UPDATE(device='[bubbles_lagrange]')
+        #:endif
 
         $:GPU_UPDATE(device='[lag_id, bub_R0, Rmax_stats, Rmin_stats, gas_mg, gas_betaT, gas_betaC, bub_dphidt, gas_p, gas_mv, &
                      & intfc_rad, intfc_vel, mtn_pos, mtn_posPrev, mtn_vel, mtn_s, n_el_bubs_loc]')

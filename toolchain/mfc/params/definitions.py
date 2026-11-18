@@ -62,6 +62,14 @@ CASE_OPT_PARAMS = {
     "recon_type",
     "muscl_order",
     "muscl_lim",
+    "bubbles_euler",
+    "bubbles_lagrange",
+    "cont_damage",
+    "hyper_cleaning",
+    "hypoelasticity",
+    "mp_weno",
+    "qbmm",
+    "surface_tension",
 }
 
 
