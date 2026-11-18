@@ -356,9 +356,6 @@ contains
         model_eqns = dflt_int
         relax = .false.
         relax_model = dflt_int
-        hypoelasticity = .false.
-        cont_damage = .false.
-        hyper_cleaning = .false.
 
         ! Condensed-phase reactive burn
         reactive_burn = .false.
@@ -381,6 +378,13 @@ contains
             mhd = .false.
             relativity = .false.
             viscous = .false.
+            bubbles_euler = .false.
+            bubbles_lagrange = .false.
+            cont_damage = .false.
+            hyper_cleaning = .false.
+            hypoelasticity = .false.
+            qbmm = .false.
+            surface_tension = .false.
         #:endif
 
         ! Not a case-optimization parameter, so it stays a runtime variable in every build.
@@ -390,14 +394,10 @@ contains
 
         ! Bubble modeling flags and parameters
         R0ref = dflt_real
-        bubbles_euler = .false.
         polydisperse = .false.
         poly_sigma = dflt_real
-        qbmm = .false.
-        surface_tension = .false.
         adv_n = .false.
         sigma = dflt_real
-        bubbles_lagrange = .false.
         particles_lagrange = .false.
 
         ! Immersed boundaries

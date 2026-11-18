@@ -1167,7 +1167,10 @@ contains
         $:GPU_UPDATE(device='[adv_n, adap_dt, adap_dt_tol, adap_dt_max_iters, pi_fac, low_Mach, ib_flux_wall]')
 
         $:GPU_UPDATE(device='[acoustic_source, num_source]')
-        $:GPU_UPDATE(device='[sigma, surface_tension]')
+        $:GPU_UPDATE(device='[sigma]')
+        #:if not MFC_CASE_OPTIMIZATION
+            $:GPU_UPDATE(device='[surface_tension]')
+        #:endif
 
         $:GPU_UPDATE(device='[dx, dy, dz, x_cb, x_cc, y_cb, y_cc, z_cb, z_cc]')
         $:GPU_UPDATE(device='[bc_x%beg, bc_x%end, bc_y%beg, bc_y%end, bc_z%beg, bc_z%end]')
